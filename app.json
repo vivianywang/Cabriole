@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Cabriole to access your camera.",
+        "NSPhotoLibraryUsageDescription": "Allow Cabriole to access your photos."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +28,13 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      ["expo-image-picker",
+      {
+        "photosPermission": "Allow Cabriole to access your photos.",
+        "cameraPermission": "Allow Cabriole to access your camera."
+      }]
+    ]
   }
 }
