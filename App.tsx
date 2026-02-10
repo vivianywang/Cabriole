@@ -14,7 +14,7 @@ import * as ImagePicker from 'expo-image-picker'; // Access system's UI to selec
 import * as FileSystem from 'expo-file-system'; // Provides access to local file system
 import Ionicons from '@expo/vector-icons/Ionicons'; // Add vector icons
 
-const imgDir = FileSystem.documentDirectory + 'images/'; // Points to app's private internal storage directory, pics stay in app
+const imgDir = (FileSystem.documentDirectory || '') + 'images/';
 
 const ensureDirExists = async () => {
 	const dirInfo = await FileSystem.getInfoAsync(imgDir); 
@@ -79,7 +79,8 @@ export default function App() {
 
 		await FileSystem.uploadAsync('http://192.168.1.52:8888/upload.php', uri, {
 			httpMethod: 'POST',
-			uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+			uploadType: FileSystem.FileSystemUploadType.MULTIPART, 
+
 			fieldName: 'file'
 		});
 
@@ -114,6 +115,7 @@ return (
 
 		<Text style={{ textAlign: 'center', fontSize: 20, fontWeight: '500' }}>My Images</Text>
 		<FlatList data={images} renderItem={renderItem} />
+		{showMetadataForm && <MetadataForm />}
 
 		{uploading && (
 			<View
@@ -132,3 +134,88 @@ return (
 	</SafeAreaView>
 );
 }
+
+const [showMetadataForm, setShowMetadataForm] = useState(false);
+const [currentImageUri, setCurrentImageUri] = useState('');
+
+// Modified saveImage to show form first
+const saveImageWithMetadata = async (uri: string) => {
+  setCurrentImageUri(uri);
+  setShowMetadataForm(true);
+};
+
+// Save with metadata
+const saveImage = async (metadata: any) => {
+  await ensureDirExists();
+  const filename = new Date().getTime() + '.jpeg';
+  const dest = imgDir + filename;
+  await FileSystem.copyAsync({ from: currentImageUri, to: dest });
+  
+  // Save metadata alongside image (you could use AsyncStorage or a JSON file)
+  const imageData = {
+    uri: dest,
+    ...metadata
+  };
+  
+  setImages([...images, imageData]);
+  setShowMetadataForm(false);
+};
+
+if (!result.canceled) {
+  saveImageWithMetadata(result.assets[0].uri); // Changed this line
+}
+
+const MetadataForm = () => {
+  const [price, setPrice] = useState('');
+  const [tags, setTags] = useState('');
+  const [description, setDescription] = useState('');
+  const [size, setSize] = useState('');
+
+  return (
+    <View style={styles.modalOverlay}>
+      <View style={styles.formContainer}>
+        <Text style={styles.formTitle}>Add Details</Text>
+        
+        <TextInput
+          placeholder="Price ($)"
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="decimal-pad"
+          style={styles.input}
+        />
+        
+        <TextInput
+          placeholder="Tags (comma separated)"
+          value={tags}
+          onChangeText={setTags}
+          style={styles.input}
+        />
+        
+        <TextInput
+          placeholder="Description"
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          style={[styles.input, { height: 80 }]}
+        />
+        
+        <View style={{ flexDirection: 'row', gap: 5 }}>
+          {['S', 'M', 'L', 'XL'].map(s => (
+            <Button
+              key={s}
+              title={s}
+              onPress={() => setSize(s)}
+              color={size === s ? '#007AFF' : '#999'}
+            />
+          ))}
+        </View>
+        
+        <Button
+          title="Save"
+          onPress={() => saveImage({ price, tags, description, size })}
+        />
+        <Button title="Cancel" onPress={() => setShowMetadataForm(false)} />
+      </View>
+    </View>
+  );
+};
