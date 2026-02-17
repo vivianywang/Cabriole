@@ -7,6 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
+import FeedScreen from './screens/FeedScreen';
+import PostScreen from './screens/PostScreen';
+import PostDetailScreen from './screens/PostDetailScreen';
 import { AuthContext } from './context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -72,7 +75,12 @@ export default function App() {
           {userToken == null ? (
             <Stack.Screen name="Login" component={LoginScreen} />
           ) : (
-            <Stack.Screen name="Home" component={HomeScreen} />
+            <>
+              <Stack.Screen name="Home" component={HomeScreen} />
+              <Stack.Screen name="Feed" component={FeedScreen} />
+              <Stack.Screen name="Post" component={PostScreen} />
+              <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+            </>
           )}
         </Stack.Navigator>
         <StatusBar style="auto" />

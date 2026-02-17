@@ -5,11 +5,12 @@ import {
   View,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const { signOut } = useContext(AuthContext);
   const [userData, setUserData] = useState(null);
 
@@ -40,20 +41,38 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Cabriole!</Text>
-      
-      {userData && (
-        <View style={styles.userInfo}>
-          <Text style={styles.greeting}>Hello, {userData.name}!</Text>
-          <Text style={styles.email}>{userData.email}</Text>
-        </View>
-      )}
+    <ScrollView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Welcome to Cabriole!</Text>
+        
+        {userData && (
+          <View style={styles.userInfo}>
+            <Text style={styles.greeting}>Hello, {userData.name}!</Text>
+            <Text style={styles.email}>{userData.email}</Text>
+          </View>
+        )}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => navigation.navigate('Feed')}
+          >
+            <Text style={styles.primaryButtonText}>Browse Marketplace</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.secondaryButton}
+            onPress={() => navigation.navigate('Post')}
+          >
+            <Text style={styles.secondaryButtonText}>Create a Post</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -61,9 +80,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    paddingTop: 100,
   },
   title: {
     fontSize: 28,
@@ -73,7 +96,7 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 50,
   },
   greeting: {
     fontSize: 20,
@@ -83,6 +106,37 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 16,
     color: '#999',
+  },
+  actionsContainer: {
+    width: '100%',
+    marginBottom: 40,
+  },
+  primaryButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 40,
+    paddingVertical: 18,
+    borderRadius: 12,
+    marginBottom: 15,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 40,
+    paddingVertical: 18,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  secondaryButtonText: {
+    color: '#007AFF',
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   logoutButton: {
     backgroundColor: '#FF3B30',
