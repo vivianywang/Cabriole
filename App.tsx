@@ -8,7 +8,10 @@ import {
     ActivityIndicator, // Inform user that task is in progress
     SafeAreaView, // Render content within safe boundaries
     Text, // Displaying + styling text
-    FlatList // Rendering long lists of data
+    FlatList, // Rendering long lists of data
+	TouchableOpacity,
+	RefreshControl,
+	TextInput
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker'; // Access system's UI to select media from device's library/taking photo
 import * as FileSystem from 'expo-file-system'; // Provides access to local file system
@@ -26,7 +29,10 @@ const ensureDirExists = async () => {
 export default function App() {
 	const [uploading, setUploading] = useState(false);
 	const [images, setImages] = useState<any[]>([]);
+	const [searchQuery, setSearchQuery] = useState('');
 
+	const [showMetadataForm, setShowMetadataForm] = useState(false);
+	const [currentImageUri, setCurrentImageUri] = useState('');
 	// Load images on startup
 	useEffect(() => {
 		loadImages();
@@ -95,7 +101,7 @@ export default function App() {
 
 	// Render image list item
 	const renderItem = ({ item }: { item: any }) => {
-		const filename = item.split('/').pop();
+		const filename = (item.uri || item).split('/').pop();
 		return (
 			<View style={{ flexDirection: 'row', margin: 1, alignItems: 'center', gap: 5 }}>
 				<Image style={{ width: 80, height: 80 }} source={{ uri: item }} />
@@ -103,9 +109,11 @@ export default function App() {
 				<Ionicons.Button name="cloud-upload" onPress={() => uploadImage(item)} />
 				<Ionicons.Button name="trash" onPress={() => deleteImage(item)} />
 			</View>
+
 		);
 	};
 
+	
 return (
 	<SafeAreaView style={{ flex: 1, gap: 20 }}>
 		<View style={{ flexDirection: 'row', justifyContent: 'space-evenly', marginVertical: 20 }}>
@@ -114,7 +122,15 @@ return (
 		</View>
 
 		<Text style={{ textAlign: 'center', fontSize: 20, fontWeight: '500' }}>My Images</Text>
-		<FlatList data={images} renderItem={renderItem} />
+		<View style={styles.searchContainer}>
+			<TextInput
+				style={styles.searchInput}
+				placeholder="Search clothing..."
+				value={searchQuery}
+				onChangeText={setSearchQuery}
+			/>
+		</View>
+		<FlatList data={filteredImages} renderItem={renderItem} />
 		{showMetadataForm && <MetadataForm />}
 
 		{uploading && (
@@ -145,7 +161,7 @@ const saveImageWithMetadata = async (uri: string) => {
 };
 
 // Save with metadata
-const saveImage = async (metadata: any) => {
+const saveImageWithDetails = async (metadata: any) => {
   await ensureDirExists();
   const filename = new Date().getTime() + '.jpeg';
   const dest = imgDir + filename;
@@ -160,10 +176,6 @@ const saveImage = async (metadata: any) => {
   setImages([...images, imageData]);
   setShowMetadataForm(false);
 };
-
-if (!result.canceled) {
-  saveImageWithMetadata(result.assets[0].uri); // Changed this line
-}
 
 const MetadataForm = () => {
   const [price, setPrice] = useState('');
@@ -210,12 +222,35 @@ const MetadataForm = () => {
           ))}
         </View>
         
+		const filteredImages = images.filter((img: any) => {
+			if (!searchQuery) return true;
+			return img.description?.toLowerCase().includes(searchQuery.toLowerCase());
+		});
+
         <Button
           title="Save"
-          onPress={() => saveImage({ price, tags, description, size })}
+          onPress={() => saveImageWithDetails({ price, tags, description, size })}
         />
         <Button title="Cancel" onPress={() => setShowMetadataForm(false)} />
       </View>
     </View>
   );
 };
+
+// STYLES
+const styles = StyleSheet.create({
+  container: {
+    flex: 1
+  },
+
+  searchContainer: {
+    paddingHorizontal: 15,
+    marginBottom: 10
+  },
+
+  searchInput: {
+    backgroundColor: '#eee',
+    padding: 10,
+    borderRadius: 10
+  }
+});
