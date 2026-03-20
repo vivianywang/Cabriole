@@ -2,14 +2,14 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import LoginScreen from './screens/LoginScreen';
-import HomeScreen from './screens/HomeScreen';
 import FeedScreen from './screens/FeedScreen';
 import PostScreen from './screens/PostScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import { AuthContext } from './context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -18,7 +18,6 @@ export default function App() {
   const [userToken, setUserToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is already logged in when app loads
   useEffect(() => {
     checkLoginStatus();
   }, []);
@@ -65,7 +64,7 @@ export default function App() {
   };
 
   if (isLoading) {
-    return <View style={styles.container} />;
+    return <View style={styles.loading} />;
   }
 
   return (
@@ -76,10 +75,10 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} />
           ) : (
             <>
-              <Stack.Screen name="Home" component={HomeScreen} />
               <Stack.Screen name="Feed" component={FeedScreen} />
               <Stack.Screen name="Post" component={PostScreen} />
               <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+              <Stack.Screen name="Profile" component={ProfileScreen} />
             </>
           )}
         </Stack.Navigator>
@@ -90,10 +89,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#FAF8F2',
   },
 });

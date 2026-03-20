@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,18 +10,17 @@ import {
   Alert,
   ActivityIndicator,
   Platform,
+  SafeAreaView,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CATEGORIES = [
-  'Costume',
-  'Dancewear',
-  'Shoes',
-  'Accessories',
-  'Props',
-  'Other',
-];
+const PURPLE = '#6B21A8';
+const CREAM = '#FAF8F2';
+const PURPLE_LIGHT = '#F3EEF9';
+const BORDER = '#E8E0F0';
+
+const CATEGORIES = ['Costume', 'Dancewear', 'Shoes', 'Accessories', 'Props', 'Other'];
 
 export default function PostScreen({ navigation }) {
   const [images, setImages] = useState([]);
@@ -41,12 +40,8 @@ export default function PostScreen({ navigation }) {
     if (Platform.OS !== 'web') {
       const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
       const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
       if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
-        Alert.alert(
-          'Permissions Required',
-          'We need camera and photo library permissions to let you add photos to your posts.'
-        );
+        Alert.alert('Permissions Required', 'We need camera and photo library permissions to let you add photos.');
       }
     }
   };
@@ -56,78 +51,40 @@ export default function PostScreen({ navigation }) {
       Alert.alert('Limit Reached', 'You can add up to 5 photos per post');
       return;
     }
-
     try {
       let result;
-      
       if (useCamera) {
         result = await ImagePicker.launchCameraAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
+          allowsEditing: true, aspect: [4, 3], quality: 0.8,
         });
       } else {
         result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [4, 3],
-          quality: 0.8,
-          allowsMultipleSelection: true,
+          allowsEditing: true, aspect: [4, 3], quality: 0.8, allowsMultipleSelection: true,
         });
       }
-
-      if (!result.canceled) {
-        if (result.assets && result.assets.length > 0) {
-          const newImages = result.assets.slice(0, 5 - images.length);
-          setImages([...images, ...newImages]);
-        }
+      if (!result.canceled && result.assets?.length > 0) {
+        const newImages = result.assets.slice(0, 5 - images.length);
+        setImages([...images, ...newImages]);
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to pick image');
-      console.error('Image picker error:', error);
     }
   };
 
-  const removeImage = (index) => {
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-  };
-
-  const selectCategory = (selectedCategory) => {
-    setCategory(selectedCategory);
-  };
+  const removeImage = (index) => setImages(images.filter((_, i) => i !== index));
 
   const handleSubmit = async () => {
-    // Validation
-    if (images.length === 0) {
-      Alert.alert('Error', 'Please add at least one photo');
-      return;
-    }
-
-    if (!name.trim()) {
-      Alert.alert('Error', 'Please enter an item name');
-      return;
-    }
-
-    if (!category) {
-      Alert.alert('Error', 'Please select a category');
-      return;
-    }
-
-    if (!price.trim() || isNaN(parseFloat(price))) {
-      Alert.alert('Error', 'Please enter a valid price');
-      return;
-    }
+    if (images.length === 0) { Alert.alert('Error', 'Please add at least one photo'); return; }
+    if (!name.trim()) { Alert.alert('Error', 'Please enter an item name'); return; }
+    if (!category) { Alert.alert('Error', 'Please select a category'); return; }
+    if (!price.trim() || isNaN(parseFloat(price))) { Alert.alert('Error', 'Please enter a valid price'); return; }
 
     setLoading(true);
-
     try {
-      // Get user data
       const userDataString = await AsyncStorage.getItem('userData');
       const userData = userDataString ? JSON.parse(userDataString) : null;
-
-      // Create post object
       const post = {
         id: Date.now().toString(),
         userId: userData?.id || 'anonymous',
@@ -137,33 +94,17 @@ export default function PostScreen({ navigation }) {
         name: name.trim(),
         category,
         description: description.trim(),
-        tags: tags.trim().split(',').map(tag => tag.trim()).filter(tag => tag),
+        tags: tags.trim().split(',').map(t => t.trim()).filter(t => t),
         size: size.trim(),
         price: parseFloat(price),
         createdAt: new Date().toISOString(),
         status: 'active',
       };
-
-      // Get existing posts
       const postsString = await AsyncStorage.getItem('posts');
       const existingPosts = postsString ? JSON.parse(postsString) : [];
-
-      // Add new post
-      const updatedPosts = [post, ...existingPosts];
-      await AsyncStorage.setItem('posts', JSON.stringify(updatedPosts));
-
-      Alert.alert(
-        'Success',
-        'Your post has been created!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
+      await AsyncStorage.setItem('posts', JSON.stringify([post, ...existingPosts]));
+      Alert.alert('Success!', 'Your item is now listed.', [{ text: 'OK', onPress: () => navigation.goBack() }]);
     } catch (error) {
-      console.error('Error creating post:', error);
       Alert.alert('Error', 'Failed to create post. Please try again.');
     } finally {
       setLoading(false);
@@ -171,101 +112,111 @@ export default function PostScreen({ navigation }) {
   };
 
   const showImageOptions = () => {
-    Alert.alert(
-      'Add Photo',
-      'Choose an option',
-      [
-        {
-          text: 'Take Photo',
-          onPress: () => pickImage(true),
-        },
-        {
-          text: 'Choose from Library',
-          onPress: () => pickImage(false),
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
+    Alert.alert('Add Photo', 'Choose an option', [
+      { text: 'Take Photo', onPress: () => pickImage(true) },
+      { text: 'Choose from Library', onPress: () => pickImage(false) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.header}>Create a Post</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Text style={styles.backBtnText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>New Listing</Text>
+          <View style={{ width: 40 }} />
+        </View>
 
-        {/* Image Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Photos (Required)</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.imageContainer}>
+        <View style={styles.content}>
+          {/* Photos */}
+          <Text style={styles.sectionLabel}>PHOTOS</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+            <View style={styles.imageRow}>
               {images.map((image, index) => (
                 <View key={index} style={styles.imageWrapper}>
                   <Image source={{ uri: image.uri }} style={styles.image} />
-                  <TouchableOpacity
-                    style={styles.removeButton}
-                    onPress={() => removeImage(index)}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
+                  <TouchableOpacity style={styles.removeBtn} onPress={() => removeImage(index)}>
+                    <Text style={styles.removeBtnText}>×</Text>
                   </TouchableOpacity>
                 </View>
               ))}
               {images.length < 5 && (
-                <TouchableOpacity
-                  style={styles.addImageButton}
-                  onPress={showImageOptions}
-                >
-                  <Text style={styles.addImageText}>+</Text>
+                <TouchableOpacity style={styles.addImageBtn} onPress={showImageOptions}>
+                  <Text style={styles.addImagePlus}>+</Text>
                   <Text style={styles.addImageLabel}>Add Photo</Text>
                 </TouchableOpacity>
               )}
             </View>
           </ScrollView>
-          <Text style={styles.hint}>Add up to 5 photos</Text>
-        </View>
+          <Text style={styles.hint}>{images.length}/5 photos added</Text>
 
-        {/* Item Details */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Item Details</Text>
-          
+          {/* Item Name */}
+          <Text style={styles.sectionLabel}>ITEM NAME</Text>
           <TextInput
             style={styles.input}
-            placeholder="Item Name *"
+            placeholder="e.g. Blue Tutu, Pointe Shoes..."
+            placeholderTextColor="#C4B5D4"
             value={name}
             onChangeText={setName}
             maxLength={100}
           />
 
-          <View style={styles.categoryContainer}>
-            <Text style={styles.label}>Category *</Text>
-            <View style={styles.categoryGrid}>
-              {CATEGORIES.map((cat) => (
-                <TouchableOpacity
-                  key={cat}
-                  style={[
-                    styles.categoryButton,
-                    category === cat && styles.categoryButtonActive,
-                  ]}
-                  onPress={() => selectCategory(cat)}
-                >
-                  <Text
-                    style={[
-                      styles.categoryButtonText,
-                      category === cat && styles.categoryButtonTextActive,
-                    ]}
-                  >
-                    {cat}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          {/* Category */}
+          <Text style={styles.sectionLabel}>CATEGORY</Text>
+          <View style={styles.categoryGrid}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                onPress={() => setCategory(cat)}
+              >
+                <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Price & Size row */}
+          <View style={styles.rowInputs}>
+            <View style={styles.rowInputGroup}>
+              <Text style={styles.sectionLabel}>PRICE</Text>
+              <View style={styles.priceWrapper}>
+                <Text style={styles.pricePrefix}>$</Text>
+                <TextInput
+                  style={styles.priceInput}
+                  placeholder="0.00"
+                  placeholderTextColor="#C4B5D4"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="decimal-pad"
+                  maxLength={10}
+                />
+              </View>
+            </View>
+            <View style={styles.rowInputGroup}>
+              <Text style={styles.sectionLabel}>SIZE</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="S, M, 8..."
+                placeholderTextColor="#C4B5D4"
+                value={size}
+                onChangeText={setSize}
+                maxLength={20}
+              />
             </View>
           </View>
 
+          {/* Description */}
+          <Text style={styles.sectionLabel}>DESCRIPTION</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Description (optional)"
+            placeholder="Describe the item, condition, measurements..."
+            placeholderTextColor="#C4B5D4"
             value={description}
             onChangeText={setDescription}
             multiline
@@ -274,213 +225,108 @@ export default function PostScreen({ navigation }) {
             textAlignVertical="top"
           />
 
+          {/* Tags */}
+          <Text style={styles.sectionLabel}>TAGS</Text>
           <TextInput
             style={styles.input}
-            placeholder="Size (e.g., S, M, L, 8, 10)"
-            value={size}
-            onChangeText={setSize}
-            maxLength={20}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Price ($) *"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            maxLength={10}
-          />
-
-          <TextInput
-            style={styles.input}
-            placeholder="Tags (comma separated, e.g., ballet, vintage, competition)"
+            placeholder="ballet, vintage, competition (comma separated)"
+            placeholderTextColor="#C4B5D4"
             value={tags}
             onChangeText={setTags}
             maxLength={200}
           />
-          <Text style={styles.hint}>Tags help others find your item</Text>
+          <Text style={styles.hint}>Tags help others discover your item</Text>
+
+          {/* Submit */}
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            onPress={handleSubmit}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitButtonText}>Post Item</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()} disabled={loading}>
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity
-          style={[styles.submitButton, loading && styles.submitButtonDisabled]}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.submitButtonText}>Post Item</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.cancelButton}
-          onPress={() => navigation.goBack()}
-          disabled={loading}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  content: {
-    padding: 20,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
+  safeArea: { flex: 1, backgroundColor: CREAM },
+  container: { flex: 1, backgroundColor: CREAM },
   header: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 30,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 14,
+    borderBottomWidth: 1, borderBottomColor: BORDER,
+    backgroundColor: CREAM,
   },
-  section: {
-    marginBottom: 30,
+  backBtn: { width: 40, height: 40, justifyContent: 'center' },
+  backBtnText: { fontSize: 26, color: PURPLE, fontWeight: '300' },
+  headerTitle: { fontSize: 18, fontWeight: '800', color: PURPLE, letterSpacing: 0.5 },
+  content: { padding: 20, paddingBottom: 50 },
+  sectionLabel: {
+    fontSize: 11, fontWeight: '700', color: '#aaa',
+    letterSpacing: 1.2, textTransform: 'uppercase',
+    marginTop: 22, marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 15,
+  imageScroll: { marginBottom: 6 },
+  imageRow: { flexDirection: 'row', gap: 10, paddingBottom: 4 },
+  imageWrapper: { position: 'relative' },
+  image: { width: 110, height: 110, borderRadius: 12, backgroundColor: PURPLE_LIGHT },
+  removeBtn: {
+    position: 'absolute', top: -8, right: -8,
+    backgroundColor: '#C026D3', width: 26, height: 26,
+    borderRadius: 13, justifyContent: 'center', alignItems: 'center',
+    elevation: 4,
   },
-  imageContainer: {
-    flexDirection: 'row',
-    gap: 10,
+  removeBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold', lineHeight: 18 },
+  addImageBtn: {
+    width: 110, height: 110, borderRadius: 12,
+    borderWidth: 2, borderColor: PURPLE, borderStyle: 'dashed',
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: PURPLE_LIGHT,
   },
-  imageWrapper: {
-    position: 'relative',
-  },
-  image: {
-    width: 120,
-    height: 120,
-    borderRadius: 10,
-    backgroundColor: '#ddd',
-  },
-  removeButton: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    backgroundColor: '#FF3B30',
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  removeButtonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    lineHeight: 20,
-  },
-  addImageButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#007AFF',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-  },
-  addImageText: {
-    fontSize: 40,
-    color: '#007AFF',
-    fontWeight: '300',
-  },
-  addImageLabel: {
-    fontSize: 12,
-    color: '#007AFF',
-    marginTop: 5,
-  },
-  hint: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 8,
-  },
+  addImagePlus: { fontSize: 36, color: PURPLE, fontWeight: '300' },
+  addImageLabel: { fontSize: 11, color: PURPLE, marginTop: 4, fontWeight: '600' },
+  hint: { fontSize: 12, color: '#C4B5D4', marginTop: 4 },
   input: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    borderRadius: 10,
-    fontSize: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    backgroundColor: '#fff', paddingHorizontal: 16, paddingVertical: 13,
+    borderRadius: 12, fontSize: 15, borderWidth: 1.5, borderColor: BORDER, color: '#1a1a1a',
   },
-  textArea: {
-    height: 100,
-    paddingTop: 12,
+  textArea: { height: 100, paddingTop: 13 },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  categoryChip: {
+    paddingHorizontal: 16, paddingVertical: 9,
+    borderRadius: 20, borderWidth: 1.5, borderColor: BORDER, backgroundColor: '#fff',
   },
-  label: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 10,
+  categoryChipActive: { backgroundColor: PURPLE, borderColor: PURPLE },
+  categoryChipText: { fontSize: 13, color: '#666', fontWeight: '500' },
+  categoryChipTextActive: { color: '#fff', fontWeight: '700' },
+  rowInputs: { flexDirection: 'row', gap: 12 },
+  rowInputGroup: { flex: 1 },
+  priceWrapper: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#fff', borderRadius: 12,
+    borderWidth: 1.5, borderColor: BORDER, paddingHorizontal: 12,
   },
-  categoryContainer: {
-    marginBottom: 15,
-  },
-  categoryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  categoryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    backgroundColor: '#fff',
-  },
-  categoryButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  categoryButtonText: {
-    fontSize: 14,
-    color: '#666',
-  },
-  categoryButtonTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
+  pricePrefix: { fontSize: 15, color: PURPLE, fontWeight: '700', marginRight: 4 },
+  priceInput: { flex: 1, fontSize: 15, color: '#1a1a1a', paddingVertical: 13 },
   submitButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 10,
+    backgroundColor: PURPLE, paddingVertical: 16, borderRadius: 14,
+    alignItems: 'center', marginTop: 28,
+    shadowColor: PURPLE, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 8, elevation: 5,
   },
-  submitButtonDisabled: {
-    opacity: 0.6,
-  },
-  submitButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  cancelButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
-  },
+  submitButtonDisabled: { opacity: 0.6 },
+  submitButtonText: { color: '#fff', fontSize: 17, fontWeight: '700', letterSpacing: 0.5 },
+  cancelButton: { paddingVertical: 16, alignItems: 'center', marginTop: 8 },
+  cancelButtonText: { color: '#C4B5D4', fontSize: 15, fontWeight: '500' },
 });
