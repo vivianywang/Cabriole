@@ -20,7 +20,7 @@ const CREAM = '#FAF8F2';
 const PURPLE_LIGHT = '#F3EEF9';
 const BORDER = '#E8E0F0';
 
-const CATEGORIES = ['Costume', 'Dancewear', 'Shoes', 'Accessories', 'Props', 'Other'];
+const CATEGORIES = ['Costume', 'Dancewear', 'Shoes', 'Accessories', 'Other'];
 
 export default function PostScreen({ navigation }) {
   const [images, setImages] = useState([]);

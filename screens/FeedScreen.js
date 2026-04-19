@@ -10,8 +10,8 @@ import {
   TextInput,
   Modal,
   ScrollView,
-  SafeAreaView,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PURPLE = '#6B21A8';
@@ -19,7 +19,7 @@ const CREAM = '#FAF8F2';
 const PURPLE_LIGHT = '#F3EEF9';
 const BORDER = '#E8E0F0';
 
-const CATEGORIES = ['All', 'Costume', 'Dancewear', 'Shoes', 'Accessories', 'Props', 'Other'];
+const CATEGORIES = ['All', 'Costume', 'Dancewear', 'Shoes', 'Accessories', 'Other'];
 
 const SORT_OPTIONS = [
   { label: 'Newest First', value: 'date_desc' },
@@ -36,6 +36,7 @@ const AGE_OPTIONS = [
 ];
 
 export default function FeedScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [posts, setPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,6 +83,8 @@ export default function FeedScreen({ navigation }) {
     setPendingMaxAgeDays(maxAgeDays);
     setShowFilters(true);
   };
+
+  const closeFilters = () => setShowFilters(false);
 
   const applyFilters = () => {
     setSelectedCategory(pendingCategory);
@@ -160,16 +163,16 @@ export default function FeedScreen({ navigation }) {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyEmoji}>🩰</Text>
       <Text style={styles.emptyText}>No items found</Text>
       <Text style={styles.emptySubtext}>Try adjusting your filters or be the first to post!</Text>
     </View>
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    // Outer view: CREAM so the status bar inset area is cream
+    <View style={[styles.root, { paddingTop: insets.top, paddingBottom: 0}]}>
+      {/* Inner view: BORDER so the home indicator inset area matches the tab bar */}
       <View style={styles.container}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.brandName}>CABRIOLE</Text>
           <Text style={styles.brandSub}>marketplace</Text>
@@ -204,36 +207,46 @@ export default function FeedScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PURPLE} />}
         />
 
-        {/* Bottom Tab Bar */}
-        <View style={styles.tabBar}>
+        {/* Tab bar — paddingBottom pushes content up, BORDER fills the home indicator zone */}
+        <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Profile')}>
             <View style={styles.tabIconWrap}>
               <Text style={styles.tabIconText}>👤</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => {}}>
-            <View style={[styles.tabIconWrap, styles.tabIconWrapActive]}>
-              <Text style={styles.tabIconText}>⌂</Text>
+            <View style={styles.tabIconWrap}>
+              <Text style={styles.tabIconText}>🏠</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Post')}>
-            <View style={styles.plusButton}>
-              <Text style={styles.plusIcon}>+</Text>
+            <View style={styles.tabIconWrap}>
+              <Text style={styles.tabIconText}>➕</Text>
             </View>
           </TouchableOpacity>
         </View>
 
-        {/* Filter Modal */}
-        <Modal visible={showFilters} animationType="slide" transparent onRequestClose={() => setShowFilters(false)}>
+        {/* Filter Modal — no swipe, just X button to close */}
+        <Modal
+          visible={showFilters}
+          animationType="slide"
+          transparent
+          onRequestClose={closeFilters}
+        >
           <View style={styles.modalOverlay}>
             <View style={styles.modalSheet}>
-              <View style={styles.modalHandle} />
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Filters</Text>
-                <TouchableOpacity onPress={resetFilters}>
-                  <Text style={styles.resetText}>Reset all</Text>
-                </TouchableOpacity>
+                <View style={styles.modalHeaderRight}>
+                  <TouchableOpacity onPress={resetFilters} style={styles.resetButton}>
+                    <Text style={styles.resetText}>Reset all</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={closeFilters} style={styles.closeButton}>
+                    <Text style={styles.closeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
+
               <ScrollView showsVerticalScrollIndicator={false}>
                 <Text style={styles.filterSectionTitle}>Category</Text>
                 <View style={styles.chipGrid}>
@@ -307,6 +320,7 @@ export default function FeedScreen({ navigation }) {
                 </View>
                 <View style={{ height: 20 }} />
               </ScrollView>
+
               <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
                 <Text style={styles.applyButtonText}>Apply Filters</Text>
               </TouchableOpacity>
@@ -314,13 +328,14 @@ export default function FeedScreen({ navigation }) {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: CREAM },
+  root: { flex: 1, backgroundColor: CREAM },
   container: { flex: 1, backgroundColor: CREAM },
+
   header: {
     backgroundColor: CREAM,
     paddingTop: 18,
@@ -354,7 +369,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   filterBadgeText: { color: '#fff', fontSize: 11, fontWeight: '700' },
-  postsContainer: { padding: 10, paddingBottom: 90 },
+
+  postsContainer: { padding: 10, paddingBottom: 20 },
   postCard: {
     flex: 1, margin: 5, backgroundColor: '#fff',
     borderRadius: 14, overflow: 'hidden',
@@ -374,46 +390,57 @@ const styles = StyleSheet.create({
   postSize: { fontSize: 12, color: '#888', marginBottom: 2 },
   postUser: { fontSize: 11, color: '#bbb' },
   emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80 },
-  emptyEmoji: { fontSize: 48, marginBottom: 12 },
   emptyText: { fontSize: 18, fontWeight: '700', color: '#999', marginBottom: 6 },
   emptySubtext: { fontSize: 14, color: '#bbb', textAlign: 'center', paddingHorizontal: 40 },
 
-  // Tab Bar
   tabBar: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: 72, backgroundColor: CREAM,
-    borderTopWidth: 1, borderTopColor: BORDER,
-    flexDirection: 'row', justifyContent: 'space-around',
-    alignItems: 'center', paddingBottom: 10,
+    height: 100,
+    backgroundColor: BORDER,
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
   tabItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   tabIconWrap: {
     width: 44, height: 44, borderRadius: 22,
     justifyContent: 'center', alignItems: 'center',
   },
-  tabIconWrapActive: { backgroundColor: PURPLE_LIGHT },
   tabIconText: { fontSize: 24 },
-  plusButton: {
-    width: 50, height: 50, borderRadius: 25,
-    backgroundColor: PURPLE, justifyContent: 'center', alignItems: 'center',
-    shadowColor: PURPLE, shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35, shadowRadius: 8, elevation: 6,
-  },
-  plusIcon: { fontSize: 32, color: '#fff', lineHeight: 34, fontWeight: '300' },
 
-  // Filter Modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'flex-end',
+  },
   modalSheet: {
-    backgroundColor: CREAM, borderTopLeftRadius: 24, borderTopRightRadius: 24,
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 34, maxHeight: '85%',
+    backgroundColor: CREAM,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 34,
+    maxHeight: '85%',
   },
-  modalHandle: {
-    width: 40, height: 4, backgroundColor: BORDER,
-    borderRadius: 2, alignSelf: 'center', marginBottom: 16,
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   modalTitle: { fontSize: 22, fontWeight: '800', color: PURPLE, letterSpacing: 0.5 },
+  modalHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  resetButton: { paddingVertical: 4 },
   resetText: { fontSize: 14, color: '#aaa', fontWeight: '500' },
+  closeButton: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: BORDER,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  closeButtonText: { fontSize: 13, color: PURPLE, fontWeight: '700' },
+
   filterSectionTitle: {
     fontSize: 11, fontWeight: '700', color: '#aaa',
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10, marginTop: 20,

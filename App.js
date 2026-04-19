@@ -10,6 +10,7 @@ import FeedScreen from './screens/FeedScreen';
 import PostScreen from './screens/PostScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
+import UserProfileScreen from './screens/UserProfileScreen';
 import { AuthContext } from './context/AuthContext';
 
 const Stack = createNativeStackNavigator();
@@ -79,6 +80,7 @@ export default function App() {
               <Stack.Screen name="Post" component={PostScreen} />
               <Stack.Screen name="PostDetail" component={PostDetailScreen} />
               <Stack.Screen name="Profile" component={ProfileScreen} />
+              <Stack.Screen name="UserProfile" component={UserProfileScreen} />
             </>
           )}
         </Stack.Navigator>

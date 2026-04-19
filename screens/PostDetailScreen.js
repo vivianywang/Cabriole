@@ -117,7 +117,14 @@ export default function PostDetailScreen({ route, navigation }) {
             {/* Seller */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>SELLER</Text>
-              <View style={styles.sellerCard}>
+              <TouchableOpacity
+                style={styles.sellerCard}
+                onPress={() => navigation.navigate('UserProfile', {
+                  userEmail: post.userEmail,
+                  userName: post.userName,
+                })}
+                activeOpacity={0.85}
+              >
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
                     {post.userName.charAt(0).toUpperCase()}
@@ -127,7 +134,8 @@ export default function PostDetailScreen({ route, navigation }) {
                   <Text style={styles.sellerName}>{post.userName}</Text>
                   <Text style={styles.sellerEmail}>{post.userEmail}</Text>
                 </View>
-              </View>
+                <Text style={styles.sellerChevron}>›</Text>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -203,6 +211,7 @@ const styles = StyleSheet.create({
   sellerInfo: { flex: 1 },
   sellerName: { fontSize: 16, fontWeight: '700', color: '#1a1a1a', marginBottom: 2 },
   sellerEmail: { fontSize: 13, color: '#aaa' },
+  sellerChevron: { fontSize: 22, color: '#C4B5D4', fontWeight: '300' },
   footer: {
     padding: 16, paddingBottom: 20,
     backgroundColor: CREAM, borderTopWidth: 1, borderTopColor: BORDER,

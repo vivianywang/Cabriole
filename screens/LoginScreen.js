@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: PURPLE,
     letterSpacing: 2,
-    fontWeight: '400',
+    fontWeight: '300',
     marginTop: 2,
   },
   subtitle: {
