@@ -8,42 +8,144 @@ import {
   Image,
   SafeAreaView,
   RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../firebase';
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 
 const PURPLE = '#6B21A8';
 const CREAM = '#FAF8F2';
 const PURPLE_LIGHT = '#F3EEF9';
 const BORDER = '#E8E0F0';
+const RED = '#DC2626';
+const RED_LIGHT = '#FEF2F2';
+
+const REPORT_REASONS = [
+  'Fake or misleading listing',
+  'Inappropriate content',
+  'Spam or scam',
+  'Harassment',
+  'Wrong category',
+  'Other',
+];
 
 export default function UserProfileScreen({ route, navigation }) {
   const { userEmail, userName } = route.params;
   const [listings, setListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [myReport, setMyReport] = useState(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showReportsModal, setShowReportsModal] = useState(false);
+  const [selectedReason, setSelectedReason] = useState('');
+  const [extraNote, setExtraNote] = useState('');
 
   useEffect(() => {
-    loadListings();
+    loadAll();
   }, []);
 
-  const loadListings = async () => {
+  const loadAll = async () => {
     try {
+      // Current user still comes from AsyncStorage (your existing auth pattern)
+      const userData = await AsyncStorage.getItem('userData');
+      const me = userData ? JSON.parse(userData) : null;
+      setCurrentUserEmail(me?.email || null);
+
+      // Listings still come from AsyncStorage (your existing posts pattern)
       const postsString = await AsyncStorage.getItem('posts');
       const allPosts = postsString ? JSON.parse(postsString) : [];
       setListings(allPosts.filter(p => p.userEmail === userEmail));
+
+      // Reports come from Firestore
+      const q = query(collection(db, 'reports'), where('sellerEmail', '==', userEmail));
+      const snapshot = await getDocs(q);
+      const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setReports(allReports);
+
+      if (me?.email) {
+        setMyReport(allReports.find(r => r.reporterEmail === me.email) || null);
+      }
     } catch (error) {
-      console.error('Error loading user listings:', error);
+      console.error('Error loading user profile data:', error);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadListings();
+    await loadAll();
     setRefreshing(false);
+  };
+
+  const handleSubmitReport = async () => {
+    if (!selectedReason) {
+      Alert.alert('Select a reason', 'Please choose a reason for your report.');
+      return;
+    }
+    if (!currentUserEmail) {
+      Alert.alert('Error', 'You must be logged in to report a user.');
+      return;
+    }
+    try {
+      // Check for existing report in Firestore (one per user per seller)
+      const existingQ = query(
+        collection(db, 'reports'),
+        where('sellerEmail', '==', userEmail),
+        where('reporterEmail', '==', currentUserEmail)
+      );
+      const existingSnap = await getDocs(existingQ);
+      if (!existingSnap.empty) {
+        Alert.alert('Already reported', 'You have already reported this seller.');
+        setShowReportModal(false);
+        return;
+      }
+
+      // Write to Firestore
+      const docRef = await addDoc(collection(db, 'reports'), {
+        sellerEmail: userEmail,
+        sellerName: userName,
+        reporterEmail: currentUserEmail,
+        reason: selectedReason,
+        note: extraNote.trim(),
+        createdAt: serverTimestamp(),
+      });
+
+      const newReport = {
+        id: docRef.id,
+        sellerEmail: userEmail,
+        reporterEmail: currentUserEmail,
+        reason: selectedReason,
+        note: extraNote.trim(),
+        createdAt: new Date().toISOString(), // local optimistic value
+      };
+
+      setReports(prev => [...prev, newReport]);
+      setMyReport(newReport);
+      setShowReportModal(false);
+      setSelectedReason('');
+      setExtraNote('');
+      Alert.alert('Report submitted', 'Thank you. We will review this seller.');
+    } catch (e) {
+      console.error('Report error:', e);
+      Alert.alert('Error', 'Could not submit report. Please try again.');
+    }
   };
 
   const initials = userName
     ? userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     : '?';
+
+  const isOwnProfile = currentUserEmail === userEmail;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -54,7 +156,18 @@ export default function UserProfileScreen({ route, navigation }) {
             <Text style={styles.backBtnText}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Seller Profile</Text>
-          <View style={{ width: 44 }} />
+          {!isOwnProfile ? (
+            <TouchableOpacity
+              style={[styles.reportHeaderBtn, myReport && styles.reportHeaderBtnDone]}
+              onPress={() => myReport ? setShowReportsModal(true) : setShowReportModal(true)}
+            >
+              <Text style={[styles.reportHeaderBtnText, myReport && styles.reportHeaderBtnTextDone]}>
+                {myReport ? 'Reported' : 'Report'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 60 }} />
+          )}
         </View>
 
         <ScrollView
@@ -84,20 +197,37 @@ export default function UserProfileScreen({ route, navigation }) {
                   <View style={styles.statDivider} />
                   <View style={styles.statItem}>
                     <Text style={styles.statNumber}>
-                      ${Math.min(...listings.map(p => p.price)).toFixed(0)}–
-                      ${Math.max(...listings.map(p => p.price)).toFixed(0)}
+                      ${Math.min(...listings.map(p => p.price)).toFixed(0)}–${Math.max(...listings.map(p => p.price)).toFixed(0)}
                     </Text>
                     <Text style={styles.statLabel}>Price range</Text>
                   </View>
                 </>
               )}
+              {reports.length > 0 && (
+                <>
+                  <View style={styles.statDivider} />
+                  <TouchableOpacity style={styles.statItem} onPress={() => setShowReportsModal(true)}>
+                    <Text style={[styles.statNumber, styles.statNumberRed]}>{reports.length}</Text>
+                    <Text style={[styles.statLabel, styles.statLabelRed]}>Reports ›</Text>
+                  </TouchableOpacity>
+                </>
+              )}
             </View>
+
+            {/* Warning banner if 3+ reports */}
+            {reports.length >= 3 && (
+              <View style={styles.warningBanner}>
+                <Text style={styles.warningIcon}>⚠️</Text>
+                <Text style={styles.warningText}>
+                  This seller has been reported {reports.length} time{reports.length !== 1 ? 's' : ''} by the community. Proceed with caution.
+                </Text>
+              </View>
+            )}
           </View>
 
           {/* Listings */}
           <View style={styles.listingsSection}>
             <Text style={styles.listingsSectionTitle}>LISTINGS</Text>
-
             {listings.length === 0 ? (
               <View style={styles.emptyListings}>
                 <Text style={styles.emptyEmoji}>🩰</Text>
@@ -111,11 +241,7 @@ export default function UserProfileScreen({ route, navigation }) {
                   onPress={() => navigation.navigate('PostDetail', { post })}
                   activeOpacity={0.85}
                 >
-                  <Image
-                    source={{ uri: post.images[0] }}
-                    style={styles.listingImage}
-                    resizeMode="cover"
-                  />
+                  <Image source={{ uri: post.images[0] }} style={styles.listingImage} resizeMode="cover" />
                   <View style={styles.listingInfo}>
                     <Text style={styles.listingName} numberOfLines={1}>{post.name}</Text>
                     <View style={styles.listingBadge}>
@@ -136,6 +262,108 @@ export default function UserProfileScreen({ route, navigation }) {
           <View style={{ height: 40 }} />
         </ScrollView>
       </View>
+
+      {/* ── Report submission modal ── */}
+      <Modal visible={showReportModal} animationType="slide" transparent onRequestClose={() => setShowReportModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Report Seller</Text>
+              <TouchableOpacity
+                onPress={() => { setShowReportModal(false); setSelectedReason(''); setExtraNote(''); }}
+                style={styles.closeBtn}
+              >
+                <Text style={styles.closeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              Why are you reporting <Text style={{ fontWeight: '700' }}>{userName}</Text>?
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.reasonsList}>
+                {REPORT_REASONS.map(reason => (
+                  <TouchableOpacity
+                    key={reason}
+                    style={[styles.reasonRow, selectedReason === reason && styles.reasonRowActive]}
+                    onPress={() => setSelectedReason(reason)}
+                  >
+                    <View style={[styles.radioOuter, selectedReason === reason && styles.radioOuterActive]}>
+                      {selectedReason === reason && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={[styles.reasonText, selectedReason === reason && styles.reasonTextActive]}>
+                      {reason}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={styles.noteLabel}>Additional details (optional)</Text>
+              <TextInput
+                style={styles.noteInput}
+                placeholder="Describe the issue..."
+                placeholderTextColor="#C4B5D4"
+                value={extraNote}
+                onChangeText={setExtraNote}
+                multiline
+                numberOfLines={3}
+                maxLength={300}
+                textAlignVertical="top"
+              />
+              <View style={{ height: 16 }} />
+            </ScrollView>
+
+            <TouchableOpacity style={styles.submitReportBtn} onPress={handleSubmitReport}>
+              <Text style={styles.submitReportBtnText}>Submit Report</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── View all reports modal ── */}
+      <Modal visible={showReportsModal} animationType="slide" transparent onRequestClose={() => setShowReportsModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Community Reports</Text>
+              <TouchableOpacity onPress={() => setShowReportsModal(false)} style={styles.closeBtn}>
+                <Text style={styles.closeBtnText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.modalSubtitle}>
+              {reports.length} report{reports.length !== 1 ? 's' : ''} submitted for this seller.
+            </Text>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {reports.map(r => (
+                <View key={r.id} style={styles.reportCard}>
+                  <View style={styles.reportCardHeader}>
+                    <View style={styles.reportReasonBadge}>
+                      <Text style={styles.reportReasonBadgeText}>{r.reason}</Text>
+                    </View>
+                    <Text style={styles.reportDate}>
+                      {new Date(r.createdAt).toLocaleDateString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                  {r.note ? <Text style={styles.reportNote}>"{r.note}"</Text> : null}
+                </View>
+              ))}
+              <View style={{ height: 16 }} />
+            </ScrollView>
+
+            {!isOwnProfile && !myReport && (
+              <TouchableOpacity
+                style={styles.addReportBtn}
+                onPress={() => { setShowReportsModal(false); setShowReportModal(true); }}
+              >
+                <Text style={styles.addReportBtnText}>Add My Report</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -152,6 +380,13 @@ const styles = StyleSheet.create({
   backBtn: { width: 44, height: 44, justifyContent: 'center' },
   backBtnText: { fontSize: 26, color: PURPLE, fontWeight: '300' },
   headerTitle: { fontSize: 18, fontWeight: '800', color: PURPLE, letterSpacing: 0.5 },
+  reportHeaderBtn: {
+    paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: 8, borderWidth: 1.5, borderColor: RED,
+  },
+  reportHeaderBtnDone: { borderColor: '#ccc' },
+  reportHeaderBtnText: { fontSize: 13, fontWeight: '700', color: RED },
+  reportHeaderBtnTextDone: { color: '#aaa' },
 
   profileSection: {
     alignItems: 'center',
@@ -160,8 +395,7 @@ const styles = StyleSheet.create({
   avatarRing: {
     width: 88, height: 88, borderRadius: 44,
     borderWidth: 3, borderColor: PURPLE,
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 14,
     shadowColor: PURPLE, shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2, shadowRadius: 10, elevation: 4,
   },
@@ -177,13 +411,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', borderRadius: 16,
     borderWidth: 1.5, borderColor: BORDER,
-    paddingVertical: 16, paddingHorizontal: 24,
-    width: '100%',
+    paddingVertical: 16, paddingHorizontal: 24, width: '100%',
   },
   statItem: { flex: 1, alignItems: 'center' },
   statNumber: { fontSize: 18, fontWeight: '800', color: PURPLE, marginBottom: 2 },
+  statNumberRed: { color: RED },
   statLabel: { fontSize: 11, color: '#aaa', fontWeight: '600', letterSpacing: 0.5 },
+  statLabelRed: { color: RED },
   statDivider: { width: 1, height: 36, backgroundColor: BORDER },
+
+  warningBanner: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: RED_LIGHT, borderRadius: 12,
+    borderWidth: 1.5, borderColor: '#FECACA',
+    padding: 12, marginTop: 14, width: '100%', gap: 8,
+  },
+  warningIcon: { fontSize: 18 },
+  warningText: { flex: 1, fontSize: 13, color: RED, fontWeight: '500', lineHeight: 18 },
 
   listingsSection: { paddingHorizontal: 20, marginTop: 28 },
   listingsSectionTitle: {
@@ -197,7 +441,6 @@ const styles = StyleSheet.create({
   },
   emptyEmoji: { fontSize: 36, marginBottom: 10 },
   emptyText: { fontSize: 16, fontWeight: '700', color: '#999' },
-
   listingRow: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', borderRadius: 14,
@@ -219,4 +462,76 @@ const styles = StyleSheet.create({
   listingBadgeText: { fontSize: 10, color: PURPLE, fontWeight: '700' },
   listingPrice: { fontSize: 15, fontWeight: '800', color: PURPLE, marginBottom: 2 },
   listingDate: { fontSize: 11, color: '#bbb' },
+
+  // Modals
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+  modalSheet: {
+    backgroundColor: CREAM, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingHorizontal: 20, paddingTop: 20, paddingBottom: 34, maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 6,
+  },
+  modalTitle: { fontSize: 22, fontWeight: '800', color: PURPLE },
+  modalSubtitle: { fontSize: 14, color: '#888', marginBottom: 20 },
+  closeBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: BORDER, justifyContent: 'center', alignItems: 'center',
+  },
+  closeBtnText: { fontSize: 13, color: PURPLE, fontWeight: '700' },
+
+  reasonsList: { marginBottom: 20 },
+  reasonRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 12, paddingHorizontal: 14,
+    borderRadius: 12, borderWidth: 1.5, borderColor: BORDER,
+    backgroundColor: '#fff', marginBottom: 8, gap: 12,
+  },
+  reasonRowActive: { borderColor: RED, backgroundColor: RED_LIGHT },
+  radioOuter: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 2, borderColor: '#ccc',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  radioOuterActive: { borderColor: RED },
+  radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: RED },
+  reasonText: { fontSize: 14, color: '#555', fontWeight: '500' },
+  reasonTextActive: { color: RED, fontWeight: '700' },
+  noteLabel: {
+    fontSize: 11, fontWeight: '700', color: '#aaa',
+    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8,
+  },
+  noteInput: {
+    backgroundColor: '#fff', paddingHorizontal: 14, paddingVertical: 12,
+    borderRadius: 12, fontSize: 14, borderWidth: 1.5, borderColor: BORDER,
+    color: '#1a1a1a', minHeight: 80,
+  },
+  submitReportBtn: {
+    backgroundColor: RED, paddingVertical: 16,
+    borderRadius: 14, alignItems: 'center', marginTop: 8,
+  },
+  submitReportBtnText: { color: '#fff', fontSize: 17, fontWeight: '700' },
+
+  reportCard: {
+    backgroundColor: '#fff', borderRadius: 12,
+    borderWidth: 1.5, borderColor: BORDER,
+    padding: 14, marginBottom: 10,
+  },
+  reportCardHeader: {
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', marginBottom: 6,
+  },
+  reportReasonBadge: {
+    backgroundColor: RED_LIGHT, paddingHorizontal: 10,
+    paddingVertical: 4, borderRadius: 20,
+  },
+  reportReasonBadgeText: { fontSize: 12, color: RED, fontWeight: '700' },
+  reportDate: { fontSize: 11, color: '#bbb' },
+  reportNote: { fontSize: 13, color: '#666', fontStyle: 'italic', lineHeight: 18 },
+  addReportBtn: {
+    borderWidth: 1.5, borderColor: RED, paddingVertical: 14,
+    borderRadius: 14, alignItems: 'center', marginTop: 8,
+  },
+  addReportBtnText: { color: RED, fontSize: 16, fontWeight: '700' },
 });
