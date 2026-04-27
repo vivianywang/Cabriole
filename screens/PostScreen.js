@@ -27,7 +27,7 @@ export default function PostScreen({ navigation }) {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [tags, setTags] = useState('');
+
   const [size, setSize] = useState('');
   const [price, setPrice] = useState('');
   const [loading, setLoading] = useState(false);
@@ -94,7 +94,6 @@ export default function PostScreen({ navigation }) {
         name: name.trim(),
         category,
         description: description.trim(),
-        tags: tags.trim().split(',').map(t => t.trim()).filter(t => t),
         size: size.trim(),
         price: parseFloat(price),
         createdAt: new Date().toISOString(),
@@ -224,18 +223,6 @@ export default function PostScreen({ navigation }) {
             maxLength={500}
             textAlignVertical="top"
           />
-
-          {/* Tags */}
-          <Text style={styles.sectionLabel}>TAGS</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="ballet, vintage, competition (comma separated)"
-            placeholderTextColor="#C4B5D4"
-            value={tags}
-            onChangeText={setTags}
-            maxLength={200}
-          />
-          <Text style={styles.hint}>Tags help others discover your item</Text>
 
           {/* Submit */}
           <TouchableOpacity

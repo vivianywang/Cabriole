@@ -100,20 +100,6 @@ export default function PostDetailScreen({ route, navigation }) {
               </View>
             ) : null}
 
-            {/* Tags */}
-            {post.tags && post.tags.length > 0 ? (
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>TAGS</Text>
-                <View style={styles.tagsRow}>
-                  {post.tags.map((tag, i) => (
-                    <View key={i} style={styles.tag}>
-                      <Text style={styles.tagText}>#{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ) : null}
-
             {/* Seller */}
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>SELLER</Text>
@@ -191,12 +177,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 10,
   },
   description: { fontSize: 15, color: '#555', lineHeight: 23 },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tag: {
-    backgroundColor: '#fff', paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 16, borderWidth: 1.5, borderColor: BORDER,
-  },
-  tagText: { fontSize: 13, color: PURPLE, fontWeight: '600' },
   sellerCard: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#fff', padding: 16, borderRadius: 14,
