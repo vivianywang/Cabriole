@@ -136,7 +136,7 @@ export default function ProfileScreen({ navigation }) {
           {/* Quick Actions */}
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.actionBtn} onPress={() => navigation.navigate('Feed')}>
-              <Text style={styles.actionBtnIcon}>⌂</Text>
+              <Text style={styles.actionBtnIcon}>🏠</Text>
               <Text style={styles.actionBtnText}>Browse</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.actionBtn, styles.actionBtnPrimary]} onPress={() => navigation.navigate('Post')}>
@@ -194,12 +194,12 @@ export default function ProfileScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Feed')}>
             <View style={styles.tabIconWrap}>
-              <Text style={styles.tabIconText}>⌂</Text>
+              <Text style={styles.tabIconText}>🏠</Text>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Post')}>
-            <View style={styles.plusButton}>
-              <Text style={styles.plusIcon}>+</Text>
+          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Feed')}>
+            <View style={styles.tabIconWrap}>
+              <Text style={styles.tabIconText}>➕</Text>
             </View>
           </TouchableOpacity>
         </View>

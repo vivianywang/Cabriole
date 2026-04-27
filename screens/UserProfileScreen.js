@@ -13,15 +13,6 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { db } from '../firebase';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
 
 const PURPLE = '#6B21A8';
 const CREAM = '#FAF8F2';
@@ -57,20 +48,17 @@ export default function UserProfileScreen({ route, navigation }) {
 
   const loadAll = async () => {
     try {
-      // Current user still comes from AsyncStorage (your existing auth pattern)
       const userData = await AsyncStorage.getItem('userData');
       const me = userData ? JSON.parse(userData) : null;
       setCurrentUserEmail(me?.email || null);
 
-      // Listings still come from AsyncStorage (your existing posts pattern)
       const postsString = await AsyncStorage.getItem('posts');
       const allPosts = postsString ? JSON.parse(postsString) : [];
       setListings(allPosts.filter(p => p.userEmail === userEmail));
 
-      // Reports come from Firestore
-      const q = query(collection(db, 'reports'), where('sellerEmail', '==', userEmail));
-      const snapshot = await getDocs(q);
-      const allReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const reportsKey = `reports:${userEmail}`;
+      const reportsString = await AsyncStorage.getItem(reportsKey);
+      const allReports = reportsString ? JSON.parse(reportsString) : [];
       setReports(allReports);
 
       if (me?.email) {
@@ -97,46 +85,33 @@ export default function UserProfileScreen({ route, navigation }) {
       return;
     }
     try {
-      // Check for existing report in Firestore (one per user per seller)
-      const existingQ = query(
-        collection(db, 'reports'),
-        where('sellerEmail', '==', userEmail),
-        where('reporterEmail', '==', currentUserEmail)
-      );
-      const existingSnap = await getDocs(existingQ);
-      if (!existingSnap.empty) {
+      const reportsKey = `reports:${userEmail}`;
+      const reportsString = await AsyncStorage.getItem(reportsKey);
+      const allReports = reportsString ? JSON.parse(reportsString) : [];
+
+      if (allReports.find(r => r.reporterEmail === currentUserEmail)) {
         Alert.alert('Already reported', 'You have already reported this seller.');
         setShowReportModal(false);
         return;
       }
 
-      // Write to Firestore
-      const docRef = await addDoc(collection(db, 'reports'), {
-        sellerEmail: userEmail,
-        sellerName: userName,
-        reporterEmail: currentUserEmail,
-        reason: selectedReason,
-        note: extraNote.trim(),
-        createdAt: serverTimestamp(),
-      });
-
       const newReport = {
-        id: docRef.id,
-        sellerEmail: userEmail,
+        id: Date.now().toString(),
         reporterEmail: currentUserEmail,
         reason: selectedReason,
         note: extraNote.trim(),
-        createdAt: new Date().toISOString(), // local optimistic value
+        createdAt: new Date().toISOString(),
       };
 
-      setReports(prev => [...prev, newReport]);
+      const updated = [...allReports, newReport];
+      await AsyncStorage.setItem(reportsKey, JSON.stringify(updated));
+      setReports(updated);
       setMyReport(newReport);
       setShowReportModal(false);
       setSelectedReason('');
       setExtraNote('');
       Alert.alert('Report submitted', 'Thank you. We will review this seller.');
     } catch (e) {
-      console.error('Report error:', e);
       Alert.alert('Error', 'Could not submit report. Please try again.');
     }
   };
