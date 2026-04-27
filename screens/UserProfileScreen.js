@@ -13,6 +13,9 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useContext } from 'react';
+import { ChatContext } from '../context/ChatContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const PURPLE = '#6B21A8';
 const CREAM = '#FAF8F2';
@@ -32,6 +35,7 @@ const REPORT_REASONS = [
 
 export default function UserProfileScreen({ route, navigation }) {
   const { userEmail, userName } = route.params;
+  const { openChat } = useContext(ChatContext);
   const [listings, setListings] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [reports, setReports] = useState([]);
@@ -197,6 +201,18 @@ export default function UserProfileScreen({ route, navigation }) {
                   This seller has been reported {reports.length} time{reports.length !== 1 ? 's' : ''} by the community. Proceed with caution.
                 </Text>
               </View>
+            )}
+
+            {/* Message button */}
+            {!isOwnProfile && (
+              <TouchableOpacity
+                style={styles.messageBtn}
+                onPress={() => openChat('General inquiry', userName, userEmail)}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.messageBtnIcon}>💬</Text>
+                <Text style={styles.messageBtnText}>Message {userName.split(' ')[0]}</Text>
+              </TouchableOpacity>
             )}
           </View>
 
@@ -509,4 +525,15 @@ const styles = StyleSheet.create({
     borderRadius: 14, alignItems: 'center', marginTop: 8,
   },
   addReportBtnText: { color: RED, fontSize: 16, fontWeight: '700' },
+
+  messageBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: PURPLE, borderRadius: 14,
+    paddingVertical: 14, paddingHorizontal: 28,
+    marginTop: 18, width: '100%', gap: 8,
+    shadowColor: PURPLE, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, shadowRadius: 10, elevation: 4,
+  },
+  messageBtnIcon: { fontSize: 18 },
+  messageBtnText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
 });

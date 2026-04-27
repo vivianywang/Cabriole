@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useContext } from 'react';
+import { ChatContext } from '../context/ChatContext';
 
 const PURPLE = '#6B21A8';
 const CREAM = '#FAF8F2';
@@ -53,6 +55,8 @@ export default function FeedScreen({ navigation }) {
   const [pendingMinPrice, setPendingMinPrice] = useState('');
   const [pendingMaxPrice, setPendingMaxPrice] = useState('');
   const [pendingMaxAgeDays, setPendingMaxAgeDays] = useState(null);
+
+  const { showChat, totalUnread } = useContext(ChatContext);
 
   useEffect(() => {
     loadPosts();
@@ -212,6 +216,30 @@ export default function FeedScreen({ navigation }) {
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Profile')}>
             <View style={styles.tabIconWrap}>
               <Text style={styles.tabIconText}>👤</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tabItem} onPress={showChat}>
+            <View style={styles.tabIconWrap}>
+              <Text style={styles.tabIconText}>💬</Text>
+
+              {totalUnread > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  backgroundColor: '#6B21A8',
+                  borderRadius: 10,
+                  minWidth: 18,
+                  height: 18,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingHorizontal: 4,
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>
+                    {totalUnread}
+                  </Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => {}}>

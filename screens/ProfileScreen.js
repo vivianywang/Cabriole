@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthContext } from '../context/AuthContext';
+import { ChatContext } from '../context/ChatContext';
 
 const PURPLE = '#6B21A8';
 const CREAM = '#FAF8F2';
@@ -21,6 +22,7 @@ const BORDER = '#E8E0F0';
 
 export default function ProfileScreen({ navigation }) {
   const { signOut } = useContext(AuthContext);
+  const { showChat, totalUnread } = useContext(ChatContext);
   const [userData, setUserData] = useState(null);
   const [myPosts, setMyPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -190,6 +192,30 @@ export default function ProfileScreen({ navigation }) {
           <TouchableOpacity style={styles.tabItem} onPress={() => {}}>
             <View style={[styles.tabIconWrap, styles.tabIconWrapActive]}>
               <Text style={styles.tabIconText}>👤</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.tabItem} onPress={showChat}>
+            <View style={styles.tabIconWrap}>
+              <Text style={styles.tabIconText}>💬</Text>
+
+              {totalUnread > 0 && (
+                <View style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -2,
+                  backgroundColor: '#6B21A8',
+                  borderRadius: 10,
+                  minWidth: 18,
+                  height: 18,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  paddingHorizontal: 4,
+                }}>
+                  <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>
+                    {totalUnread}
+                  </Text>
+                </View>
+              )}
             </View>
           </TouchableOpacity>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Feed')}>
