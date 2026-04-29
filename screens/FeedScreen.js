@@ -173,9 +173,7 @@ export default function FeedScreen({ navigation }) {
   );
 
   return (
-    // Outer view: CREAM so the status bar inset area is cream
     <View style={[styles.root, { paddingTop: insets.top, paddingBottom: 0}]}>
-      {/* Inner view: BORDER so the home indicator inset area matches the tab bar */}
       <View style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.brandName}>CABRIOLE</Text>
@@ -211,7 +209,6 @@ export default function FeedScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={PURPLE} />}
         />
 
-        {/* Tab bar — paddingBottom pushes content up, BORDER fills the home indicator zone */}
         <View style={[styles.tabBar, { paddingBottom: insets.bottom }]}>
           <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Profile')}>
             <View style={styles.tabIconWrap}>
@@ -254,7 +251,6 @@ export default function FeedScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Filter Modal — no swipe, just X button to close */}
         <Modal
           visible={showFilters}
           animationType="slide"
