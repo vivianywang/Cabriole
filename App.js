@@ -17,13 +17,13 @@ import { ChatContext } from './context/ChatContext';
 
 const Stack = createNativeStackNavigator();
 
-// ─── Design tokens (mirrors UserProfileScreen) ────────────────────────────────
+//  Design tokens
 const PURPLE       = '#6B21A8';
 const PURPLE_LIGHT = '#F3EEF9';
 const CREAM        = '#FAF8F2';
 const BORDER       = '#E8E0F0';
 
-// ─── Chat List ────────────────────────────────────────────────────────────────
+//  Chat List 
 function ChatList({ chats, onSelectChat, onClose }) {
   const getInitials = (name) =>
     name ? name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '?';
@@ -86,7 +86,7 @@ function ChatList({ chats, onSelectChat, onClose }) {
   );
 }
 
-// ─── Chat Screen ──────────────────────────────────────────────────────────────
+//  Chat Screen 
 function ChatScreen({ chat, onSend, onBack, onClose }) {
   const [messageText, setMessageText] = useState('');
   const getInitials = (name) =>
@@ -160,7 +160,7 @@ function ChatScreen({ chat, onSend, onBack, onClose }) {
   );
 }
 
-// ─── App ──────────────────────────────────────────────────────────────────────
+//  App 
 export default function App() {
   const [userToken, setUserToken] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -198,7 +198,7 @@ export default function App() {
     }
   };
 
-  // ── Auth context ────────────────────────────────────────────────────────────
+  //  Auth context 
   const authContext = {
     signIn: async (token, userData) => {
       try {
@@ -229,7 +229,7 @@ export default function App() {
     },
   };
 
-  // ── Chat helpers ────────────────────────────────────────────────────────────
+  //  Chat helpers 
   const openChat = (itemName, sellerName, sellerEmail) => {
     const existing = chats.find((c) => c.itemName === itemName && c.sellerName === sellerName);
     if (existing) {
@@ -282,7 +282,7 @@ export default function App() {
     totalUnread,
   };
 
-  // ── Render ──────────────────────────────────────────────────────────────────
+  //  Render 
   if (isLoading) {
     return <View style={styles.loading} />;
   }
@@ -331,14 +331,14 @@ export default function App() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+//  Styles 
 const styles = StyleSheet.create({
   loading: {
     flex: 1,
     backgroundColor: CREAM,
   },
 
-  // ── Chat list ──────────────────────────────────────────────────────────────
+  //  Chat list 
   chatListContainer: {
     flex: 1,
     backgroundColor: CREAM,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
   },
   unreadText: { color: '#fff', fontSize: 11, fontWeight: '800' },
 
-  // ── Chat screen ────────────────────────────────────────────────────────────
+  //  Chat screen 
   chatScreen: {
     flex: 1,
     backgroundColor: CREAM,
