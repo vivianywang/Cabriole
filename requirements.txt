@@ -1,0 +1,36 @@
+# Cabriole – Requirements
+# Install dependencies by running: npm install
+
+# Core Framework
+expo@~54.0.31
+react@19.1.0
+react-native@0.81.5               
+react-dom@19.1.0
+react-native-web@~0.21.0
+
+# Navigation 
+@react-navigation/native@^7.0.19
+@react-navigation/native-stack@^7.1.13
+react-native-screens@~4.6.0
+react-native-safe-area-context@4.14.0
+react-native-gesture-handler@^2.31.0
+react-native-reanimated@^4.3.0
+
+# Firebase (Backend)
+firebase@^10.14.1
+
+# Storage
+@react-native-async-storage/async-storage@2.1.0
+
+# Media / Images
+expo-image-picker@~17.0.10
+expo-file-system@~19.0.21
+
+# UI / Icons
+@expo/vector-icons@^15.0.3
+expo-status-bar@~3.0.9
+
+# Dev Dependencies
+@types/react@~19.1.10
+expo-cli@^6.3.10    
+typescript@~5.9.2
