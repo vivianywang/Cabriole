@@ -54,28 +54,31 @@ Scan the QR code with your phone, and the app will open.
 
 ### Sites / Videos Accessed for Learning Concepts
  
-| Source | Purpose |
+### Sites / Videos Accessed for Learning Concepts
+ 
+| Site / Video | Purpose |
 |--------|---------|
-| [Codecademy – Introduction to JavaScript](https://www.codecademy.com/enrolled/courses/introduction-to-javascript) | Used to learn foundational JavaScript concepts applied throughout the app. |
-| [Codecademy – React 101](https://www.codecademy.com/enrolled/courses/react-101) | Used to learn React components, state, props, and how the React library works — the basis of the entire app's UI. |
-| [YouTube – React Native & Expo Setup](https://www.youtube.com/watch?v=J2j1yk-34OY) | Followed to set up the initial project structure using React Native and Expo. |
-| [Stack Overflow – Firebase for Beginners](https://stackoverflow.com/beta/discussions/78385666/for-a-beginner-developer-whats-the-best-framework-to-use-with-firebase) | Consulted when deciding which backend tool to use; led to choosing Firebase as the most approachable option for this project. |
-| [React Native Docs – Modal](https://reactnative.dev/docs/modal) | Used to learn how to build modals and pop-up alerts, such as empty input warnings and logout confirmations. |
-| [React Native Elements – SearchBar](https://reactnativeelements.com/docs/1.2.0/searchbar) | Used to learn how to implement a search bar for filtering listings on the Feed screen. |
-| [Stream – React Native Chat SDK](https://getstream.io/chat/sdk/react-native/tutorial/cli/) | Referenced when exploring how to add chat capabilities to the app. |
+| [https://www.codecademy.com/enrolled/courses/introduction-to-javascript](https://www.codecademy.com/enrolled/courses/introduction-to-javascript) | To learn basic Javascript concepts |
+| [https://www.codecademy.com/enrolled/courses/react-101](https://www.codecademy.com/enrolled/courses/react-101) | To learn different React components, and how the library works |
+| [https://www.youtube.com/watch?v=J2j1yk-34OY](https://www.youtube.com/watch?v=J2j1yk-34OY) | To learn how to set up our project on React Native and Expo. |
+| [https://stackoverflow.com/beta/discussions/78385666/for-a-beginner-developer-whats-the-best-framework-to-use-with-firebase](https://stackoverflow.com/beta/discussions/78385666/for-a-beginner-developer-whats-the-best-framework-to-use-with-firebase) | To decide what backend tool to use for our app (decided on Firebase as we deemed this to be the simplest for our case) |
+| [https://reactnative.dev/docs/modal](https://reactnative.dev/docs/modal) | To learn how to code modals and pop ups to inform users about specific cases (ex. empty inputs) |
+| [https://reactnativeelements.com/docs/1.2.0/searchbar](https://reactnativeelements.com/docs/1.2.0/searchbar) | To learn how to create a search bar to filter specific elements |
+| [https://getstream.io/chat/sdk/react-native/tutorial/cli/](https://getstream.io/chat/sdk/react-native/tutorial/cli/) | To learn how to use Stream's React Native SDK to add chat capabilities to our application |
  
 ### Code Used from Sites / Videos
  
-| Source | How It Was Used |
+| Site / Video | Code used / why |
 |--------|----------------|
-| [Firebase Web Setup Docs](https://firebase.google.com/docs/web/setup) | Followed the setup instructions and used the provided configuration code to initialize the Firebase backend (`firebase.js`). |
+| [https://firebase.google.com/docs/web/setup](https://firebase.google.com/docs/web/setup) | Took the code and followed the instructions from here to set up the backend Firebase environment |
  
 ### Code from Generative AI
  
-| Tool | Prompt & How It Was Used |
+| Generative AI Tool | Prompt, how code was used |
 |------|--------------------------|
-| Claude.ai | **Prompt:** *"Steps to set up a login screen on React Native."* Used as a reference to build `LoginScreen.js` and the authentication backend. The front end was redesigned afterward. |
-| ChatGPT | **Prompt:** *"Create a pseudocode for an image upload function, including frontend and backend features."* Used as a structural skeleton for the image upload feature in `PostScreen.js`, replacing placeholders with working code to access the user's photo library. |
-| Claude.ai | **Prompt:** *"Steps to allow users to post with different fields of input using React Native and Firebase backend."* Followed to build the posting feature in `PostScreen.js`. UI was customized afterward. **Follow-up prompt:** *"How to filter these posts based on certain elements."* Used to implement the category filter logic on the Feed screen. |
-| Claude.ai | **Prompt:** *"Why isn't my search bar filtering the content? It doesn't do anything."* Used to debug the search/filter functionality on the Feed screen. |
-| ChatGPT | **Prompt:** *"I implemented a report button, however now the entire user profile screen is not working (it is just showing a black screen). What is going on?"* Used to identify and fix the bug causing `UserProfileScreen.js` to render as a blank screen. |
+| Claude.ai | Prompt: steps to set up a login screen on react native. Used as a reference (followed the steps given) to code the login screen and the backend components of the screen. Tweaked the front end afterwards as well. |
+| ChatGPT | Prompt: Create a pseudocode for an image upload function, including frontend and backend features. Used as a skeleton (replaced blanks with code) to allow programs to access the user's library, and upload to post. |
+| Claude.ai | Prompt: steps to allow users to post with different fields of input using React native and Firebase backend. Used as a reference (followed the steps given) to code the posting feature of our app. Tweaked the front end and UI afterwards. Follow up prompt: how to filter these posts based on certain elements. Followed the steps once again to code the filter logic. |
+| Claude.ai | Prompt: Why isn't my search bar filtering the content? It doesn't do anything. Used to debug the search/filter functionality on the Feed screen. |
+| ChatGPT | Prompt: I implemented a report button, however now the entire user profile screen is not working (it is just showing a black screen). What is going on? Used ChatGPT's response to fix the bug in the code. |
+ 
