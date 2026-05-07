@@ -5,21 +5,17 @@ const FIREBASE_API_KEY = "AIzaSyDN2NaHsWKHo9l4wvwpbvPnCRib0SM4GUw";
 
 /**
  * Sign up new user with Firebase REST API
+ * Also saves the display name to Firebase so it persists across logins
  */
 export const signup = async (name, email, password) => {
   try {
+    // Step 1: Create the account
     const response = await fetch(
       `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${FIREBASE_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          returnSecureToken: true,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, returnSecureToken: true }),
       }
     );
 
@@ -41,6 +37,20 @@ export const signup = async (name, email, password) => {
       throw new Error(message);
     }
 
+    // Step 2: Save the display name to Firebase using the token we just got
+    await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:update?key=${FIREBASE_API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          idToken: data.idToken,
+          displayName: name,
+          returnSecureToken: false,
+        }),
+      }
+    );
+
     return {
       token: data.idToken,
       user: {
@@ -56,6 +66,7 @@ export const signup = async (name, email, password) => {
 
 /**
  * Login user with Firebase REST API
+ * Returns the display name stored in Firebase
  */
 export const login = async (email, password) => {
   try {
@@ -63,14 +74,8 @@ export const login = async (email, password) => {
       `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          returnSecureToken: true,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, returnSecureToken: true }),
       }
     );
 
@@ -79,9 +84,11 @@ export const login = async (email, password) => {
     if (!response.ok) {
       let message = 'Login failed';
       if (data.error) {
-        if (data.error.message === 'INVALID_LOGIN_CREDENTIALS' || 
-            data.error.message === 'EMAIL_NOT_FOUND' ||
-            data.error.message === 'INVALID_PASSWORD') {
+        if (
+          data.error.message === 'INVALID_LOGIN_CREDENTIALS' ||
+          data.error.message === 'EMAIL_NOT_FOUND' ||
+          data.error.message === 'INVALID_PASSWORD'
+        ) {
           message = 'Invalid email or password';
         } else if (data.error.message === 'USER_DISABLED') {
           message = 'This account has been disabled';
@@ -114,6 +121,7 @@ export const logout = async () => {
 
 /**
  * Verify token with Firebase
+ * Returns the display name stored in Firebase
  */
 export const verifyToken = async (token) => {
   try {
@@ -121,12 +129,8 @@ export const verifyToken = async (token) => {
       `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${FIREBASE_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          idToken: token,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
       }
     );
 

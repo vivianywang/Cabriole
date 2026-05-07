@@ -50,6 +50,10 @@ Scan the QR code with your phone, and the app will open.
 - Chat feature is not functional: At the moment, our chat feature is only there to deomnstrate what the chat would look like and is only the UI. Users cannot actually chat with others with this feature. In the future, with more time, our team might have the chance to fully implement the backend of the chat feature.
 
 
+## Support
+Please contact vwang1@ocdsb.ca or ftong2@ocdsb.ca if you have any questions or concerns. 
+
+
 ## Sources
 
 ### Sites / Videos Accessed for Learning Concepts
